@@ -964,30 +964,6 @@ class Diff
             return $this;
         }
 
-        $prevInternalEncoding = mb_internal_encoding();
-        $newInternalEncoding = 'UCS-2LE';
-        if ($prevInternalEncoding != $newInternalEncoding) {
-            mb_internal_encoding($newInternalEncoding);
-
-            $errorReportingLevel = error_reporting();
-            error_reporting($errorReportingLevel & ~E_NOTICE);
-
-            $text1Draft = iconv($prevInternalEncoding, $newInternalEncoding, $text1);
-            $text2Draft = iconv($prevInternalEncoding, $newInternalEncoding, $text2);
-
-            if ($text1Draft === false || $text2Draft === false) {
-                $newInternalEncoding = 'UCS-4LE';
-
-                $text1Draft = iconv($prevInternalEncoding, $newInternalEncoding, $text1);
-                $text2Draft = iconv($prevInternalEncoding, $newInternalEncoding, $text2);
-            }
-
-            $text1 = $text1Draft;
-            $text2 = $text2Draft;
-
-            error_reporting($errorReportingLevel);
-        }
-
         // Trim off common prefix (speedup).
         $commonLength = $this->getToolkit()->commonPrefix($text1, $text2);
         if ($commonLength == 0) {
@@ -1017,14 +993,6 @@ class Diff
         }
         if ($commonSuffix != '') {
             array_push($diffs, array(self::EQUAL, $commonSuffix));
-        }
-
-        if ($newInternalEncoding != $prevInternalEncoding) {
-            mb_internal_encoding($prevInternalEncoding);
-            foreach ($diffs as &$change) {
-                $change[1] = iconv($newInternalEncoding, $prevInternalEncoding, $change[1]);
-            }
-            unset($change);
         }
 
         $this->setChanges($diffs);
